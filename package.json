@@ -4,7 +4,7 @@
   "description": "Code transformers for Vue projects",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
+    "test": "jest --verbose",
     "sortkeys": "node transformers/sort_keys/sortKeys.js"
   },
   "keywords": [
