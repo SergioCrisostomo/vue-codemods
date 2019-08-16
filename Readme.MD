@@ -27,14 +27,14 @@ Before the transform:
 
 ```
   computed: {
-    ...spreadA,
+    ...mapGettersB(),
     computedB() {
       return 'B';
     },
     computedA() {
       return 'A';
     },
-    ...spreadB,
+    ...mapGettersA(),
   },
   props: {
     b: ['bar'],
@@ -47,8 +47,8 @@ After the transform:
 
 ```
   computed: {
-    ...spreadA,
-    ...spreadB,
+    ...mapGettersB(),
+    ...mapGettersA(),
 
     computedA() {
       return 'A';

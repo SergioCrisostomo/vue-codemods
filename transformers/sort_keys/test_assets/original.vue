@@ -7,14 +7,14 @@ const {spreadA, spreadB} = {};
 export default {
   name: 'TestTemplate',
   computed: {
-    ...spreadA,
+    ...mapGettersB(),
     computedB() {
       return 'B';
     },
     computedA() {
       return 'A';
     },
-    ...spreadB,
+    ...mapGettersA(),
   },
   props: {
     b: ['bar'],
