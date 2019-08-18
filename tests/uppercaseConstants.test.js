@@ -12,7 +12,7 @@ describe('Uppercase constants', () => {
     const beforeTransformation = fs.readFileSync(FILE_PATH + 'original.js', 'utf8');
     const transformedFile = fs.readFileSync(FILE_PATH + 'transformed.js', 'utf8');
 
-    exec(`node ${TRANSFORMER_PATH}uppercaseConstants.js --path ${FILE_PATH}original.js`).then(() => {
+    exec(`node ${TRANSFORMER_PATH}uppercaseConstants.js --path ${FILE_PATH}original.js --options '{"which": "all", "dry": true}'`).then(() => {
       const afterTransformation = fs.readFileSync(FILE_PATH + 'original.js', 'utf8');
 
       // restore file

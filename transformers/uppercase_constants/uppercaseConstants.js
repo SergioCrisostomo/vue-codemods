@@ -5,7 +5,7 @@ const jscodeshift = require('jscodeshift');
 const getFiles = require('../../utils/getFiles');
 const SCRIPT_CONTENT = /<script>[\s\S]+<\/script>/;
 
-const {path: appRoot, fileTypes = ['.js', '.vue'], debug = false} = commandParser(process.argv);
+const {path: appRoot, fileTypes = ['.js', '.vue'], debug = false, options} = commandParser(process.argv);
 
 const transform = (file, api) => {
   const j = api.jscodeshift;
@@ -22,10 +22,7 @@ const transform = (file, api) => {
   };
 
   const nodes = [];
-  const opts = {which: 'all', dry: true};
-  // "opts" can be: global, multiple, all
-  // "dry" can be: true or undefined (dry will replace string appearances with the variable name)
-
+  const opts = Object.assign({dry: false, which: 'multiple'}, JSON.parse(options || '{}'));
   const constVariables = jSource
     .find(j.VariableDeclarator, {
       init: {
