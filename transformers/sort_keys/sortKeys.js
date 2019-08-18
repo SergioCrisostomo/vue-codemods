@@ -179,14 +179,22 @@ function processFile(file) {
   }
 }
 
-fileTypes.forEach((type) => {
-  getFiles(appRoot, type)
-    .then((files) => {
-      const sourceFiles = files.filter((filePath) => !filePath.includes('node_modules') && !filePath.includes('sandbox'));
-      console.log('Found', sourceFiles.length, 'files of type:', type);
-      sourceFiles.forEach(processFile);
+const isSingleFile = Boolean(appRoot.match(/\.js$|\.vue$/));
+fileTypes
+  .filter((type) => {
+    if (!isSingleFile) return true;
+    return appRoot.match(new RegExp(type + '$'));
+  })
+  .forEach((type) => {
+    const filePaths = isSingleFile ? Promise.resolve([appRoot]) : getFiles(appRoot, type);
 
-      return sourceFiles;
-    })
-    .catch((err) => console.log(err));
-});
+    filePaths
+      .then((files) => {
+        const sourceFiles = files.filter((filePath) => !filePath.includes('node_modules') && !filePath.includes('sandbox'));
+        console.log('Found', sourceFiles.length, 'files of type:', type);
+        sourceFiles.forEach(processFile);
+
+        return sourceFiles;
+      })
+      .catch((err) => console.log(err));
+  });

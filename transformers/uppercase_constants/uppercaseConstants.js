@@ -5,67 +5,60 @@ const jscodeshift = require('jscodeshift');
 const getFiles = require('../../utils/getFiles');
 const SCRIPT_CONTENT = /<script>[\s\S]+<\/script>/;
 
-const {
-  path: appRoot,
-  fileTypes = ['.js', '.vue'],
-  debug = false
-} = commandParser(process.argv);
-
+const {path: appRoot, fileTypes = ['.js', '.vue'], debug = false} = commandParser(process.argv);
 
 const transform = (file, api) => {
   const j = api.jscodeshift;
   const jSource = j(file.source);
 
-  const upperSnakeCase = string => {
+  const upperSnakeCase = (string) => {
     return string
-      .replace(/([A-Z])/g, " $1")
-      .replace(/[\-_]/g, " ")
-      .split(" ")
-      .map(word => word.trim().toUpperCase())
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/[\-_]/g, ' ')
+      .split(' ')
+      .map((word) => word.trim().toUpperCase())
       .filter(Boolean)
-      .join("_");
+      .join('_');
   };
 
   const nodes = [];
-  const opts = { which: "all", dry: true };
+  const opts = {which: 'all', dry: true};
   // "opts" can be: global, multiple, all
   // "dry" can be: true or undefined (dry will replace string appearances with the variable name)
 
   const constVariables = jSource
     .find(j.VariableDeclarator, {
       init: {
-        type: "Literal"
-      }
+        type: 'Literal',
+      },
     })
-    .filter(node => node.parent.node.kind === "const")
-    .filter(node => {
-      if (opts.which === "global") {
+    .filter((node) => node.parent.node.kind === 'const')
+    .filter((node) => {
+      if (opts.which === 'global') {
         return node.isGlobal;
       }
       return true;
     });
 
-  console.log("variables", constVariables.length);
-  constVariables.forEach(node => {
+  console.log('variables', constVariables.length);
+  constVariables.forEach((node) => {
     const variableName = node.value.id.name;
     // usages will include both the declarations and the places where its used
     const usages = jSource.find(j.Identifier, {
-      name: variableName
+      name: variableName,
     });
 
-    if (opts.which === "multiple" && usages < 3) {
+    if (opts.which === 'multiple' && usages < 3) {
       // in this case we have only the declaration and 1 usage of the variable
       return;
     }
 
     if (opts.dry) {
       const declaredString = node.value.init.value;
-      const dryable = jSource
-        .find(j.Literal, { value: declaredString })
-        .forEach(string => {
-          if (string.parent === node) return;
-          string.replace(upperSnakeCase(variableName));
-        });
+      const dryable = jSource.find(j.Literal, {value: declaredString}).forEach((string) => {
+        if (string.parent === node) return;
+        string.replace(upperSnakeCase(variableName));
+      });
     }
 
     usages.forEach((Identifier, i, identifiers) => {
@@ -75,9 +68,9 @@ const transform = (file, api) => {
         // find the VariableDeclarator in the tree
         const declaratorParent = j(parent).find(j.VariableDeclarator, {
           init: {
-            type: "Literal"
+            type: 'Literal',
           },
-          id: { name: variableName }
+          id: {name: variableName},
         });
 
         // console.log(parent === node, declaratorParent.paths().length, parent.value.type);
@@ -93,12 +86,12 @@ const transform = (file, api) => {
 
   nodes
     .filter((el, i, arr) => arr.indexOf(el) === i)
-    .forEach(node => {
+    .forEach((node) => {
       const type = node.value.type;
       node.value.name = upperSnakeCase(node.value.name);
     });
   return jSource.toSource();
-}
+};
 
 function processFile(file) {
   console.log('File:', file);
@@ -145,14 +138,22 @@ function processFile(file) {
   }
 }
 
-fileTypes.forEach((type) => {
-  getFiles(appRoot, type)
-    .then((files) => {
-      const sourceFiles = files.filter((filePath) => !filePath.includes('node_modules') && !filePath.includes('sandbox'));
-      console.log('Found', sourceFiles.length, 'files of type:', type);
-      sourceFiles.forEach(processFile);
+const isSingleFile = Boolean(appRoot.match(/\.js$|\.vue$/));
+fileTypes
+  .filter((type) => {
+    if (!isSingleFile) return true;
+    return appRoot.match(new RegExp(type + '$'));
+  })
+  .forEach((type) => {
+    const filePaths = isSingleFile ? Promise.resolve([appRoot]) : getFiles(appRoot, type);
 
-      return sourceFiles;
-    })
-    .catch((err) => console.log(err));
-});
+    filePaths
+      .then((files) => {
+        const sourceFiles = files.filter((filePath) => !filePath.includes('node_modules') && !filePath.includes('sandbox'));
+        console.log('Found', sourceFiles.length, 'files of type:', type);
+        sourceFiles.forEach(processFile);
+
+        return sourceFiles;
+      })
+      .catch((err) => console.log(err));
+  });
