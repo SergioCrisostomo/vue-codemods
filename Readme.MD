@@ -79,7 +79,7 @@ The options are:
 
  - `which`, can be `all`, `multiple` or `global`
     + `all`: rename all ocurrencies
-    + `multiple`: rename only ocurrencies that show upp more than once
+    + `multiple`: rename only ocurrencies that show upp more than once (default)
     + `global`: rename only ocurrencies declared in the global space
  - `dry`, can be `true` or `false` - to replace duplicate string declarations with variable names 
  
