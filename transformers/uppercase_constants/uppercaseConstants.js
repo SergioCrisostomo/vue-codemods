@@ -1,4 +1,4 @@
-// https://astexplorer.net/#/gist/2518b989d1a8f33e61b9b95392355233/d1ba024f1c63e736f392e4d3a07f425fa18d9fce
+// https://astexplorer.net/#/gist/2518b989d1a8f33e61b9b95392355233/35a00f3cf2f0be9191ccfc42a9b81998c2159b46
 const fs = require('fs');
 const commandParser = require('../../utils/commandParser');
 const jscodeshift = require('jscodeshift');
@@ -21,8 +21,11 @@ const transform = (file, api) => {
       .join('_');
   };
 
+  const removeDuplicates = (el, i, arr) => arr.indexOf(el) === i;
+
   const nodes = [];
   const opts = Object.assign({dry: false, which: 'multiple'}, JSON.parse(options || '{}'));
+
   const constVariables = jSource
     .find(j.VariableDeclarator, {
       init: {
@@ -37,9 +40,9 @@ const transform = (file, api) => {
       return true;
     });
 
-  console.log('variables', constVariables.length);
   constVariables.forEach((node) => {
     const variableName = node.value.id.name;
+
     // usages will include both the declarations and the places where its used
     const usages = jSource.find(j.Identifier, {
       name: variableName,
@@ -50,15 +53,18 @@ const transform = (file, api) => {
       return;
     }
 
+    let dryed = [];
     if (opts.dry) {
       const declaredString = node.value.init.value;
-      const dryable = jSource.find(j.Literal, {value: declaredString}).forEach((string) => {
+      jSource.find(j.Literal, {value: declaredString, regex: node.value.init.regex}).forEach((string) => {
         if (string.parent === node) return;
+        dryed.push(node);
         string.replace(upperSnakeCase(variableName));
       });
+      dryed = dryed.filter(removeDuplicates);
     }
 
-    usages.forEach((Identifier, i, identifiers) => {
+    usages.forEach((Identifier) => {
       let parent = Identifier.parent;
 
       while (parent) {
@@ -70,8 +76,12 @@ const transform = (file, api) => {
           id: {name: variableName},
         });
 
-        // console.log(parent === node, declaratorParent.paths().length, parent.value.type);
-        if (declaratorParent.paths().length > 1) {
+        const matches = declaratorParent
+          .paths()
+          .concat(dryed)
+          .filter(removeDuplicates);
+
+        if (opts.which === 'all' || matches.length > 1 - dryed.length) {
           nodes.push(Identifier);
           return;
         }
@@ -84,7 +94,6 @@ const transform = (file, api) => {
   nodes
     .filter((el, i, arr) => arr.indexOf(el) === i)
     .forEach((node) => {
-      const type = node.value.type;
       node.value.name = upperSnakeCase(node.value.name);
     });
   return jSource.toSource();
