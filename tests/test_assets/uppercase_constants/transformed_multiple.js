@@ -1,17 +1,17 @@
-const myRepeatedString = 'Some string';
+const MY_REPEATED_STRING = 'Some string';
 const myRepeatedRegexp = /foobar/;
 let dynamicString = 'Dynamic string';
 function foo() {
   const signal = 'Some other string'.match(/foobar/) ? '!' : '-';
-  return myRepeatedString + signal + 'Some string';
+  return MY_REPEATED_STRING + signal + 'Some string';
 }
 
 function bar() {
-  let myRepeatedString = 'Some other string';
-  return myRepeatedString + '...';
+  let MY_REPEATED_STRING = 'Some other string';
+  return MY_REPEATED_STRING + '...';
 }
 
 const myUniqueString = 'I only show up once...';
 const myOtherUniqueVariable = 'foobar'.match(/baz/);
 
-console.log(foo('Some string'), bar(), dynamicString, myUniqueString, myRepeatedString);
+console.log(foo('Some string'), bar(), dynamicString, myUniqueString, MY_REPEATED_STRING);
