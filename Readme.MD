@@ -162,7 +162,7 @@ export default {
 };
 ```
 
-After the transform, with options `{which: 'all', dry: true}`:
+After the transform:
 
 ```
 const noThis = function(bar) {
