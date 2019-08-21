@@ -36,7 +36,7 @@ const transform = (file, api) => {
     })
     .filter(Boolean)
     .get();
-  console.log('methodsObject', methodsObject);
+
   const methodFunctions = methodsObject.value.properties;
   const methodsWithNoThis = methodFunctions.filter((fn) => {
     const thisExpressions = j(fn).find(j.ThisExpression);
