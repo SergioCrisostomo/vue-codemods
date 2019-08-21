@@ -1,4 +1,4 @@
-// https://astexplorer.net/#/gist/1bb1149e9fd9a423ddcf255466ed5b40/2c10297f75a39b5934f562878d29a3ea243a6aa2
+// https://astexplorer.net/#/gist/1bb1149e9fd9a423ddcf255466ed5b40/2531ec207bb5f14b5f522c1f17549f18de4c623b
 const fs = require('fs');
 const commandParser = require('../../utils/commandParser');
 const jscodeshift = require('jscodeshift');
@@ -28,6 +28,7 @@ const transform = (file, api) => {
 
       while ((parentObject = getClosest(parentObject, j.ObjectExpression))) {
         depth++;
+
         if (depth === 2) {
           return parentObject;
         }
@@ -35,6 +36,7 @@ const transform = (file, api) => {
     })
     .filter(Boolean)
     .get();
+  console.log('methodsObject', methodsObject);
   const methodFunctions = methodsObject.value.properties;
   const methodsWithNoThis = methodFunctions.filter((fn) => {
     const thisExpressions = j(fn).find(j.ThisExpression);
@@ -54,9 +56,10 @@ const transform = (file, api) => {
     return root;
   })(methodsObject);
 
-  const rootVariableDeclaration = getClosest(vueRoot, j.VariableDeclaration).value;
+  const rootDeclaration = getClosest(vueRoot, j.VariableDeclaration) || getClosest(vueRoot, j.ExportDefaultDeclaration);
+
   const body = jSource.find(j.Program).get().value.body;
-  const indexOfRootVariableDeclaration = body.indexOf(rootVariableDeclaration);
+  const indexOfRootVariableDeclaration = body.indexOf(rootDeclaration.value);
 
   methodsWithNoThis.forEach((method) => {
     const name = method.key.name;
