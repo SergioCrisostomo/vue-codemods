@@ -10,6 +10,12 @@ This repository contains a collection of codemod scripts for use with JSCodeshif
 
 ### Transformers:
 
+ - **Sort keys:** Sort object keys sorts Vue API properties according to [Vue's styleguide](https://vuejs.org/v2/style-guide/).  
+ - **Uppercase constants renamer:** Renames all constant declarations and optionaly DRY them.
+ - **Extract non instance methods:** Finds methods in the Vue object and removes the ones that do not depend on `this`, declaring them instead as functions outside the Vue object.
+
+#### Transformers explanation:
+
 **Sort keys:**
 
 Sort object keys sorts Vue API properties according to [Vue's styleguide](https://vuejs.org/v2/style-guide/).  
@@ -128,4 +134,48 @@ const myUniqueString = 'I only show up once...';
 console.log(foo(MY_REPEATED_STRING), bar(), dynamicString, MY_REPEATED_STRING);
 
 
+```
+
+**Extract non instance methods:**
+
+Finds methods in the Vue object and removes the ones that do not depend on `this`, declaring them instead as functions outside the Vue object.
+ 
+Example:
+
+    $ node transformers/extract_non_instance_methods/extractNonInstanceMethods.js --path <folder with vue or js files>
+
+
+Before the transform:
+
+```
+export default {
+  methods: {
+    noThis(bar)  {
+      return {methods: [1, 2, 3, bar]};
+    },
+    hasThis() {
+      const foo = this.foo;
+      bar();
+      return this.noThis(foo);
+    },
+  }
+};
+```
+
+After the transform, with options `{which: 'all', dry: true}`:
+
+```
+const noThis = function(bar) {
+  return {methods: [1, 2, 3, bar]};
+};
+
+export default {
+  methods: {
+    hasThis() {
+      const foo = this.foo;
+      bar();
+      return noThis(foo);
+    }
+  }
+};
 ```
