@@ -5,8 +5,9 @@ This repository contains a collection of codemod scripts for use with JSCodeshif
 
 ### How to use:
 
-    $ npm install 
-    $ node transformers/sort_keys/sortKeys.js --path <folder with vue files>
+    $ npm install vue-codemods
+    $ cd vue-codemods
+    $ node ./transformers/sort_keys/sortKeys.js --path <folder with vue files>
 
 ### Transformers:
 
@@ -139,6 +140,8 @@ console.log(foo(MY_REPEATED_STRING), bar(), dynamicString, MY_REPEATED_STRING);
 **Extract non instance methods:**
 
 Finds methods in the Vue object and removes the ones that do not depend on `this`, declaring them instead as functions outside the Vue object.
+>**Note**: this codemod takes into account the usage of methods in the template so it will **not** extract methods that are used in the template, 
+which would break code.
  
 Example:
 
