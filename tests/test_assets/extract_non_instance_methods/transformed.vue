@@ -137,12 +137,14 @@ export default {
       this.isOpen = false;
       this.$emit(CLOSE);
     },
-    noThisButUsedInTemplate2() {
-      return 'I should stay in the instance';
-    },
+
     noThisButUsedInTemplate1() {
       return 'I should stay in the instance';
     },
+
+    noThisButUsedInTemplate2() {
+      return 'I should stay in the instance';
+    }
   },
 };
 </script>
