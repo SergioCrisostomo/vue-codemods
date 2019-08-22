@@ -1,71 +1,16 @@
 // https://astexplorer.net/#/gist/1bb1149e9fd9a423ddcf255466ed5b40/2531ec207bb5f14b5f522c1f17549f18de4c623b
 const fs = require('fs');
-const commandParser = require('../../utils/commandParser');
 const jscodeshift = require('jscodeshift');
+const vueCompiler = require('vue-template-compiler');
 const getFiles = require('../../utils/getFiles');
+const commandParser = require('../../utils/commandParser');
+const transform = require('./transformer');
+
+const HTML_CONTENT = /<template>[\s\S]+<\/template>/;
 const SCRIPT_CONTENT = /<script>[\s\S]+<\/script>/;
 
+
 const {path: appRoot, fileTypes = ['.js', '.vue'], debug = false, options} = commandParser(process.argv);
-
-const transform = (file, api) => {
-  const j = api.jscodeshift;
-
-  const getClosest = (node, type) => {
-    const closest = j(node).closest(type);
-
-    if (closest.length > 0) {
-      return closest.get();
-    }
-    return null;
-  };
-
-  const jSource = j(file.source);
-
-  const methodsIdentifier = jSource.find(j.Identifier, {name: 'methods'});
-  if (methodsIdentifier.length === 0) {
-    // this file has no "methods" object
-    return jSource.toSource();
-  }
-  const methodsObject = methodsIdentifier
-    .closest(j.Property)
-    .find(j.ObjectExpression)
-    .get();
-
-  const methodFunctions = methodsObject.value.properties;
-  const methodsWithNoThis = methodFunctions.filter((fn) => {
-    const thisExpressions = j(fn).find(j.ThisExpression);
-    return thisExpressions.length === 0;
-  });
-
-  // remove methods from the instance
-  methodsObject.value.properties = methodsObject.value.properties.filter((prop) => {
-    return !methodsWithNoThis.includes(prop);
-  });
-
-  // add the method as a variable in the body
-  const vueRoot = getClosest(methodsObject, j.ObjectExpression);
-  const rootDeclaration = getClosest(vueRoot, j.VariableDeclaration) || getClosest(vueRoot, j.ExportDefaultDeclaration);
-  const body = jSource.find(j.Program).get().value.body;
-  const indexOfRootVariableDeclaration = body.indexOf(rootDeclaration.value);
-
-  methodsWithNoThis.forEach((method) => {
-    const name = method.key.name;
-    const variableDeclaration = j.variableDeclaration('const', [j.variableDeclarator(j.identifier(name), method.value)]);
-    body.splice(indexOfRootVariableDeclaration, 0, variableDeclaration);
-
-    // correct the path inside the instance
-    const usages = j(methodsObject).find(j.MemberExpression, {
-      object: {type: 'ThisExpression'},
-      property: {name: name},
-    });
-    usages.forEach((entry) => j(entry).replaceWith(name));
-
-    // correct the path inside the template
-    // TODO
-  });
-
-  return jSource.toSource();
-};
 
 function processFile(file) {
   console.log('File:', file);
@@ -79,24 +24,29 @@ function processFile(file) {
   const isVueFile = Boolean(file.match(/.vue$/));
 
   const fileContent = fs.readFileSync(file, 'utf8');
-  let source = fileContent;
+  let jsSource = fileContent;
+  let templateSource = '';
 
   if (isVueFile) {
-    const match = fileContent.match(SCRIPT_CONTENT);
+    const scriptContentMatch = fileContent.match(SCRIPT_CONTENT);
+const templateContentMatch = fileContent.match(HTML_CONTENT);
 
-    if (!match) {
+    if (!scriptContentMatch || !templateContentMatch) {
       return;
     }
 
-    source = match[0].slice('<script>'.length, -'</script>'.length);
+    jsSource = scriptContentMatch[0].slice('<script>'.length, -'</script>'.length);
+    templateSource = templateContentMatch[0].slice('<template>'.length, -'</template>'.length);
   }
 
   if (debug) {
     console.log('::: SOURCE :::');
-    console.log(source);
+    console.log(jsSource);
   }
 
-  let transformed = transform({source}, {jscodeshift});
+
+  const templateAST = vueCompiler.compile(templateSource).ast;
+  let transformed = transform({source: jsSource}, {jscodeshift}, {templateAST});
 
   if (debug) {
     console.log('::: JSCODESHIFT :::');
