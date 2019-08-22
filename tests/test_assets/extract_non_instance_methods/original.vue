@@ -1,5 +1,7 @@
 <template>
-  <div>Some test template</div>
+  <div :some-prop="noThisButUsedInTemplate1('foo')" @click="noThisButUsedInTemplate2">
+    Some test template
+  </div>
 </template>
 <script>
 import {CSS_PREFIX_UPPER_FIRST} from 'Src/shared';
@@ -132,7 +134,13 @@ export default {
       this.$emit(CLOSE);
     },
     noThis() {
-      return 'foo';
+      return 'I should be extracted to the global space';
+    },
+    noThisButUsedInTemplate1() {
+      return 'I should stay in the instance';
+    },
+    noThisButUsedInTemplate2() {
+      return 'I should stay in the instance';
     },
   },
 };
