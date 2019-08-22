@@ -151,34 +151,71 @@ Example:
 Before the transform:
 
 ```
+<template>
+  <div :some-prop="noThisButUsedInTemplate1('foo')" @click="noThisButUsedInTemplate2">
+    Some test template
+  </div>
+</template>
+<script>
 export default {
+  name: 'Component',
   methods: {
-    noThis(bar)  {
-      return {methods: [1, 2, 3, bar]};
+    close() {
+      if (this.isClosed) {
+        return;
+      }
+
+      this.isOpen = false;
+      this.$emit('close');
     },
-    hasThis() {
-      const foo = this.foo;
-      bar();
-      return this.noThis(foo);
+    noThis() {
+      return 'I should be extracted to the global space';
     },
-  }
+    noThisButUsedInTemplate1() {
+      return 'I should stay in the instance';
+    },
+    noThisButUsedInTemplate2() {
+      return 'I should stay in the instance';
+    },
+  },
 };
+</script>
 ```
 
 After the transform:
 
 ```
-const noThis = function(bar) {
-  return {methods: [1, 2, 3, bar]};
+<template>
+  <div :some-prop="noThisButUsedInTemplate1('foo')" @click="noThisButUsedInTemplate2">
+    Some test template
+  </div>
+</template>
+<script>
+const noThis = function() {
+  return 'I should be extracted to the global space';
 };
 
 export default {
+  name: 'Component',
   methods: {
-    hasThis() {
-      const foo = this.foo;
-      bar();
-      return noThis(foo);
+    close() {
+      if (this.isClosed) {
+        return;
+      }
+
+      this.isOpen = false;
+      this.$emit('close');
+    },
+
+    noThisButUsedInTemplate1() {
+      return 'I should stay in the instance';
+    },
+
+    noThisButUsedInTemplate2() {
+      return 'I should stay in the instance';
     }
-  }
+  },
 };
+</script>
+
 ```
