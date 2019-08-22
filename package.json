@@ -1,6 +1,6 @@
 {
   "name": "vue-codemods",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Code transformers for Vue projects",
   "main": "index.js",
   "scripts": {
