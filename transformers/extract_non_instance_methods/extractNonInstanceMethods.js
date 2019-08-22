@@ -20,21 +20,15 @@ const transform = (file, api) => {
   };
 
   const jSource = j(file.source);
-  const methodsObject = jSource
-    .find(j.Identifier, {name: 'methods'})
-    .map((node) => {
-      let depth = 0;
-      let parentObject = node;
 
-      while ((parentObject = getClosest(parentObject, j.ObjectExpression))) {
-        depth++;
-
-        if (depth === 2) {
-          return parentObject;
-        }
-      }
-    })
-    .filter(Boolean)
+  const methodsIdentifier = jSource.find(j.Identifier, {name: 'methods'});
+  if (methodsIdentifier.length === 0) {
+    // this file has no "methods" object
+    return jSource.toSource();
+  }
+  const methodsObject = methodsIdentifier
+    .closest(j.Property)
+    .find(j.ObjectExpression)
     .get();
 
   const methodFunctions = methodsObject.value.properties;
@@ -47,17 +41,10 @@ const transform = (file, api) => {
   methodsObject.value.properties = methodsObject.value.properties.filter((prop) => {
     return !methodsWithNoThis.includes(prop);
   });
+
   // add the method as a variable in the body
-  const vueRoot = ((node) => {
-    let root = node;
-    while ((node = getClosest(node, j.ObjectExpression))) {
-      root = node;
-    }
-    return root;
-  })(methodsObject);
-
+  const vueRoot = getClosest(methodsObject, j.ObjectExpression);
   const rootDeclaration = getClosest(vueRoot, j.VariableDeclaration) || getClosest(vueRoot, j.ExportDefaultDeclaration);
-
   const body = jSource.find(j.Program).get().value.body;
   const indexOfRootVariableDeclaration = body.indexOf(rootDeclaration.value);
 
