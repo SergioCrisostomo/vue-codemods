@@ -1,5 +1,7 @@
-
 const getAllAttrs = (node) => {
+  if (!node) {
+    return [];
+  }
   if (node.hasOwnProperty('attrsList')) {
     return node.attrsList;
   } else if (Array.isArray(node)) {
@@ -45,7 +47,7 @@ module.exports = (file, api, options) => {
     .find(j.ObjectExpression)
     .get();
 
-  const methodFunctions = methodsObject.value.properties.filter(node => !templateAttrs.includes(node.key.name));
+  const methodFunctions = methodsObject.value.properties.filter((node) => !templateAttrs.includes(node.key.name));
   const methodsWithNoThis = methodFunctions.filter((fn) => {
     const thisExpressions = j(fn).find(j.ThisExpression);
     return thisExpressions.length === 0;
